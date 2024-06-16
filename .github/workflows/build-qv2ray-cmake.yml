@@ -31,7 +31,9 @@ jobs:
           awk '{if(index($0, "replace github.com/sagernet/sing-box =>") > 0) $0 = "replace github.com/sagernet/sing-box => ../../../../sing-box"}1' go.mod > temp_file && mv -f temp_file go.mod 
           awk '1; END { print "replace github.com/sagernet/sing => ../../../../sing" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod 
           awk '1; END { print "replace github.com/sagernet/sing-quic => ../../../../sing-quic" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod
-          cd ../../../..
+          cd ../../../libs
+          sed -i 's/with_wireguard/with_wireguard,with_shadowsocksr/g' build_go.sh
+          cd ../..
           chmod -x .github/edit.sh
           bash .github/edit.sh
           
