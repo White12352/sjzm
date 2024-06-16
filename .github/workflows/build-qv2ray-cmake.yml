@@ -35,15 +35,15 @@ jobs:
           sed -i 's/with_wireguard/with_wireguard,with_shadowsocksr/g' build_go.sh
           cd ../3rdparty
           rm -rf QHotkey
-          git clone -b master https://github.com/Skycoder42/QHotkey.git QHotkey
-          cd QHotkey
-          git checkout 52e25ac
-          cd ..
+          curl -L -o QHotkey-52e25acf221e5ac86ce648f6922620fb2d6a7121.zip https://github.com/Skycoder42/QHotkey/archive/52e25acf221e5ac86ce648f6922620fb2d6a7121.zip
+          unzip QHotkey-52e25acf221e5ac86ce648f6922620fb2d6a7121.zip
+          rm -f QHotkey-52e25acf221e5ac86ce648f6922620fb2d6a7121.zip
+          mv QHotkey-52e25acf221e5ac86ce648f6922620fb2d6a7121 QHotkey
           rm -rf qjs
-          git clone -b main https://github.com/MatsuriDayo/qjs.git qjs
-          cd qjs
-          git checkout 3fb0770
-          cd ..
+          curl -L -o qjs-3fb0770c9ee5ab031a56072520641d4577b694e3.zip https://github.com/MatsuriDayo/qjs/archive/3fb0770c9ee5ab031a56072520641d4577b694e3.zip
+          unzip qjs-3fb0770c9ee5ab031a56072520641d4577b694e3.zip
+          rm -f 3fb0770c9ee5ab031a56072520641d4577b694e3.zip
+          mv qjs-3fb0770c9ee5ab031a56072520641d4577b694e3 qjs0
           cd ../..
           chmod -x .github/edit.sh
           bash .github/edit.sh
