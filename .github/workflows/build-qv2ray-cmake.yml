@@ -33,6 +33,17 @@ jobs:
           awk '1; END { print "replace github.com/sagernet/sing-quic => ../../../../sing-quic" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod
           cd ../../../libs
           sed -i 's/with_wireguard/with_wireguard,with_shadowsocksr/g' build_go.sh
+          cd ../3rdparty
+          rm -rf QHotkey
+          git submodule add https://github.com/Skycoder42/QHotkey.git QHotkey
+          cd QHotkey
+          git reset --hard 52e25ac
+          cd ..
+          rm -rf qjs
+          git submodule add https://github.com/MatsuriDayo/qjs.git qjs
+          cd qjs
+          git reset --hard 3fb0770
+          cd ..
           cd ../..
           chmod -x .github/edit.sh
           bash .github/edit.sh
