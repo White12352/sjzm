@@ -32,9 +32,7 @@ jobs:
           awk '1; END { print "replace github.com/sagernet/sing => ../../../../sing" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod 
           awk '1; END { print "replace github.com/sagernet/sing-quic => ../../../../sing-quic" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod
           cd ../../../.github/workflows
-          ls -la
-          insert_text='          [ ${{ matrix.cross_os }} == public_res ] || cd .. \&\& rm -rf sing-box \&\& git clone -b sing-box-b-t-rmz https:\/\/github\.com\/White12352\/sing-box\.git sing-box \&\& rm -rf sing \&\& git clone -b dev-lt-rmz https:\/\/github\.com\/White12352\/sing\.git sing \&\& rm -rf sing-quic \&\& git clone -b dev https:\/\/github\.com\/Mahdi-zarei\/sing-quic sing-quic \&\& git config --global user.email "you@example\.com" \&\& git config --global user.name "Your Name" \&\& cd jirn\/go\/cmd\/nekobox_core \&\& go mod tidy \&\& cd ../../..' 
-          sed -i "/\[ \${{ matrix.cross_os }} == public_res \] || GOOS=\${{ matrix.cross_os }} GOARCH=\${{ matrix.cross_arch }} \\.\\/libs\\/build_go\\.sh/ i \\$insert_text" build-qv2ray-cmake.yml
+          insert_text='          [ ${{ matrix.cross_os }} == public_res ] || cd .. \&\& rm -rf sing-box \&\& git clone -b sing-box-b-t-rmz https:\/\/github\.com\/White12352\/sing-box\.git sing-box \&\& rm -rf sing \&\& git clone -b dev-lt-rmz https:\/\/github\.com\/White12352\/sing\.git sing \&\& rm -rf sing-quic \&\& git clone -b dev https:\/\/github\.com\/Mahdi-zarei\/sing-quic sing-quic \&\& git config --global user.email "you@example\.com" \&\& git config --global user.name "Your Name" \&\& cd sjzm\/go\/cmd\/nekobox_core \&\& go mod tidy \&\& cd ../../..' && sed -i "/\[ \${{ matrix.cross_os }} == public_res \] || GOOS=\${{ matrix.cross_os }} GOARCH=\${{ matrix.cross_arch }} \\.\\/libs\\/build_go\\.sh/ i \\$insert_text" build-qv2ray-cmake.yml
           cd ../../..
           
       - name: Commit and Push Changes
