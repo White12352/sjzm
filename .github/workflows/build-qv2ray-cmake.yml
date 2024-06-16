@@ -37,7 +37,7 @@ jobs:
           rm -rf QHotkey
           git clone -b master --depth 1 https://github.com/Skycoder42/QHotkey.git QHotkey
           cd QHotkey
-          git reset --hard 52e25acf221e5ac86ce648f6922620fb2d6a7121
+          git reset --hard 52e25ac
           cd ..
           rm -rf qjs
           git clone -b 3fb0770c9ee5ab031a56072520641d4577b694e3 https://github.com/MatsuriDayo/qjs.git qjs
