@@ -1,48 +1,53 @@
-name: Python Web App CI/CD
+name: code
 
 on:
   workflow_dispatch: 
-  
-jobs:
-  build-and-deploy:
 
+jobs:
+  clone_and_push:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
 
-    - name: Set up Python environment
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
+      - name: Get latest go version
+        id: version
+        run: |
+          echo ::set-output name=go_version::$(curl -s https://raw.githubusercontent.com/actions/go-versions/main/versions-manifest.json | grep -oE '"version": "[0-9]{1}.[0-9]{1,}(.[0-9]{1,})?"' | head -1 | cut -d':' -f2 | sed 's/ //g; s/"//g')
+      
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ steps.version.outputs.go_version }}
+          check-latest: true
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run tests
-      run: |
-        python -m unittest discover
-
-    - name: Build Docker image
-      run: |
-        docker build -t my-python-app .
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: Push Docker image
-      run: |
-        docker tag my-python-app:latest your-docker-username/my-python-app:latest
-        docker push your-docker-username/my-python-app:latest
-
-    - name: Deploy to Kubernetes
-      uses: appleboy/kubernetes-action@master
-      with:
-        kube_config_data: ${{ secrets.KUBE_CONFIG_DATA }}
-        image: your-docker-username/my-python-app:latest
-        namespace: production
+      - name: code
+        run: |
+          git clone -b translate https://github.com/xchacha20-poly1305/nekoray.git nekoray
+          cd nekoray/go/cmd/nekobox_core
+          awk '{if(index($0, "replace github.com/sagernet/sing-box =>") > 0) $0 = "replace github.com/sagernet/sing-box => ../../../../sing-box"}1' go.mod > temp_file && mv -f temp_file go.mod 
+          awk '1; END { print "replace github.com/sagernet/sing => ../../../../sing" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod 
+          awk '1; END { print "replace github.com/sagernet/sing-quic => ../../../../sing-quic" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod
+          cd ../../../.github/workflows
+          sed -i '/\[ ${{ matrix.cross_os }} == public_res \] || GOOS=${{ matrix.cross_os }} GOARCH=${{ matrix.cross_arch }} \.\/libs\/build_go\.sh/ i \
+          [ ${{ matrix.cross_os }} == public_res ] || cd .. \&\& rm -rf sing-box \&\& git clone -b sing-box-b-t-rmz https:\/\/github\.com\/White12352\/sing-box\.git sing-box \&\& rm -rf sing \&\& git clone -b dev-lt-rmz https:\/\/github\.com\/White12352\/sing\.git sing \&\& rm -rf sing-quic \&\& git clone -b dev https:\/\/github\.com\/Mahdi-zarei\/sing-quic sing-quic \&\& git config --global user.email "you@example\.com" \&\& git config --global user.name "Your Name" \&\& cd sjzm\/go\/cmd\/nekobox_core \&\& go mod tidy \&\& cd ../../..' build-qv2ray-cmake.yml
+          cd ../../..
+          
+      - name: Commit and Push Changes
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          git config user.email "github-actions@github.com"
+          git config user.name "GitHub Actions"
+          git checkout -b dev2.1
+          rm -rf .github
+          rm -f README.md
+          cp -r husi/* .
+          cp -r husi/.github .
+          rm -rf husi
+          git add .
+          git commit -m "commit"
+          git push --force origin dev2.1
