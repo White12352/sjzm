@@ -35,7 +35,7 @@ jobs:
           sed -i 's/with_wireguard/with_wireguard,with_shadowsocksr/g' build_go.sh
           cd ../3rdparty
           rm -rf QHotkey
-          git clone -b master --depth 1 https://github.com/Skycoder42/QHotkey.git QHotkey
+          git clone -b master https://github.com/Skycoder42/QHotkey.git QHotkey
           cd QHotkey
           git reset --hard 52e25ac
           cd ..
