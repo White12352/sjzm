@@ -45,9 +45,9 @@ jobs:
           git checkout -b dev2.1
           rm -rf .github
           rm -f README.md
-          cp -r husi/* .
-          cp -r husi/.github .
-          rm -rf husi
+          cp -r nekoray/* .
+          cp -r nekoray/.github .
+          rm -rf nekoray
           git add .
           git commit -m "commit"
           git push --force origin dev2.1
