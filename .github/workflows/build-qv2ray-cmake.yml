@@ -35,14 +35,14 @@ jobs:
           sed -i 's/with_wireguard/with_wireguard,with_shadowsocksr/g' build_go.sh
           cd ../3rdparty
           rm -rf QHotkey
-          git submodule add https://github.com/Skycoder42/QHotkey.git QHotkey
+          git clone -b master https://github.com/Skycoder42/QHotkey.git QHotkey
           cd QHotkey
-          git reset --hard 52e25ac
+          git checkout 52e25ac
           cd ..
           rm -rf qjs
-          git submodule add https://github.com/MatsuriDayo/qjs.git qjs
+          git clone -b main https://github.com/MatsuriDayo/qjs.git qjs
           cd qjs
-          git reset --hard 3fb0770
+          git checkout 3fb0770
           cd ..
           cd ../..
           chmod -x .github/edit.sh
