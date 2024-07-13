@@ -54,7 +54,7 @@ jobs:
         run: |
           git config user.email "github-actions@github.com"
           git config user.name "GitHub Actions"
-          git checkout -b dev2.1
+          git checkout -b dev2.2
           rm -rf .github
           rm -f README.md
           cp -r nekoray/* .
@@ -62,4 +62,4 @@ jobs:
           rm -rf nekoray
           git add .
           git commit -m "commit"
-          git push --force origin dev2.1
+          git push --force origin dev2.2
