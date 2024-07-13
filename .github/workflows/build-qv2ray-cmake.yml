@@ -26,7 +26,7 @@ jobs:
 
       - name: code
         run: |
-          git clone -b translate https://github.com/xchacha20-poly1305/nekoray.git nekoray
+          git clone -b main https://github.com/Mahdi-zarei/nekoray.git nekoray
           cd nekoray/go/cmd/nekobox_core
           awk '{if(index($0, "replace github.com/sagernet/sing-box =>") > 0) $0 = "replace github.com/sagernet/sing-box => ../../../../sing-box"}1' go.mod > temp_file && mv -f temp_file go.mod 
           awk '1; END { print "replace github.com/sagernet/sing => ../../../../sing" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod 
