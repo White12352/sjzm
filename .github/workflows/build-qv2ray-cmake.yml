@@ -27,12 +27,12 @@ jobs:
       - name: code
         run: |
           git clone -b main https://github.com/Restia-Ashbell/nekoray.git nekoray
-          cd nekoray/go/cmd/nekobox_core
-          awk '{if(index($0, "replace github.com/sagernet/sing-box =>") > 0) $0 = "replace github.com/sagernet/sing-box => ../../../../sing-box"}1' go.mod > temp_file && mv -f temp_file go.mod 
-          awk '1; END { print "replace github.com/sagernet/sing => ../../../../sing" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod 
-          awk '1; END { print "replace github.com/sagernet/sing-quic => ../../../../sing-quic" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod
+          cd nekoray/go/cmd/updater
+          #awk '{if(index($0, "replace github.com/sagernet/sing-box =>") > 0) $0 = "replace github.com/sagernet/sing-box => ../../../../sing-box"}1' go.mod > temp_file && mv -f temp_file go.mod 
+          #awk '1; END { print "replace github.com/sagernet/sing => ../../../../sing" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod 
+          #awk '1; END { print "replace github.com/sagernet/sing-quic => ../../../../sing-quic" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod
           cd ../../../libs
-          sed -i 's/with_wireguard/with_wireguard,with_shadowsocksr/g' build_go.sh
+          #sed -i 's/with_wireguard/with_wireguard,with_shadowsocksr/g' build_go.sh
           cd ../3rdparty
           rm -rf QHotkey
           curl -L -o QHotkey-52e25acf221e5ac86ce648f6922620fb2d6a7121.zip https://github.com/Skycoder42/QHotkey/archive/52e25acf221e5ac86ce648f6922620fb2d6a7121.zip
