@@ -26,7 +26,7 @@ jobs:
 
       - name: code
         run: |
-          git clone -b main https://github.com/Restia-Ashbell/nekoray.git nekoray
+          git clone -b main https://github.com/Mahdi-zarei/nekoray.git nekoray
           cd nekoray/go/cmd/nekobox_core
           awk '{if(index($0, "replace github.com/sagernet/sing-box =>") > 0) $0 = "replace github.com/sagernet/sing-box => ../../../../sing-box"}1' go.mod > temp_file && mv -f temp_file go.mod 
           awk '1; END { print "replace github.com/sagernet/sing => ../../../../sing" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod 
@@ -54,7 +54,7 @@ jobs:
         run: |
           git config user.email "github-actions@github.com"
           git config user.name "GitHub Actions"
-          git checkout -b dev2.3
+          git checkout -b dev2.2
           rm -rf .github
           rm -f README.md
           cp -r nekoray/* .
@@ -62,4 +62,4 @@ jobs:
           rm -rf nekoray
           git add .
           git commit -m "commit"
-          git push --force origin dev2.3
+          git push --force origin dev2.2
