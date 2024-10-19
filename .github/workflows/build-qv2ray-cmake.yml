@@ -45,6 +45,8 @@ jobs:
           rm -f 3fb0770c9ee5ab031a56072520641d4577b694e3.zip
           mv qjs-3fb0770c9ee5ab031a56072520641d4577b694e3 qjs
           cd ../..
+          rm -f nekoray/.github/workflows/build-qv2ray-cmake.yml
+          cp -f .github/build-qv2ray-cmake.yml nekoray/.github/workflows
           chmod -x .github/edit.sh
           bash .github/edit.sh
           
