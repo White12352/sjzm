@@ -1,65 +1,241 @@
-name: code
+name: Nekoray build matrix - cmake
 
 on:
-  workflow_dispatch: 
-
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release Tag'
+        required: true
+      publish:
+        description: 'Publish: If want ignore'
+        required: false
+      artifact-pack:
+        description: 'artifact-pack: If want ignore'
+        required: false
 jobs:
-  clone_and_push:
+  build-go:
+    strategy:
+      matrix:
+        cross_os: [ windows, linux, darwin ]
+        cross_arch: [ amd64, arm64 ]
+        include:
+          - cross_os: public_res
+            cross_arch: public_res
+          - cross_os: windows7
+            cross_arch: amd64
+      fail-fast: false
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Checking out sources
+        uses: actions/checkout@v4.2.0
+      - name: Go Status
+        run: git ls-files go | xargs cat | sha1sum > go_status
+      - name: Cache Common Download
+        id: cache-common
+        uses: actions/cache@v4.0.2
         with:
-          token: ${{ secrets.GH_TOKEN }}
-
-      - name: Get latest go version
-        id: version
-        run: |
-          echo ::set-output name=go_version::$(curl -s https://raw.githubusercontent.com/actions/go-versions/main/versions-manifest.json | grep -oE '"version": "[0-9]{1}.[0-9]{1,}(.[0-9]{1,})?"' | head -1 | cut -d':' -f2 | sed 's/ //g; s/"//g')
-      
-      - name: Setup Go
-        uses: actions/setup-go@v3
+          path: artifacts.tgz
+          key: CommonCache-${{ matrix.cross_os }}-${{ matrix.cross_arch }}-${{ hashFiles('libs/*.sh', 'go_status', '*.txt') }}
+      - name: Install Golang
+        if: steps.cache-common.outputs.cache-hit != 'true' && matrix.cross_os != 'windows7'
+        uses: actions/setup-go@v5.0.2
         with:
-          go-version: ${{ steps.version.outputs.go_version }}
-          check-latest: true
-
-      - name: code
+          go-version: '1.23.2'
+      - name: Install Older Golang
+        if: steps.cache-common.outputs.cache-hit != 'true' && matrix.cross_os == 'windows7'
+        uses: actions/setup-go@v5.0.2
+        with:
+          go-version: '1.20'
+      - name: Build golang parts
+        if: steps.cache-common.outputs.cache-hit != 'true'
+        shell: bash
         run: |
-          git clone -b main https://github.com/Mahdi-zarei/nekoray.git nekoray
-          cd nekoray/go/cmd/nekobox_core
-          awk '{if(index($0, "replace github.com/sagernet/sing-box =>") > 0) $0 = "replace github.com/sagernet/sing-box => ../../../../sing-box"}1' go.mod > temp_file && mv -f temp_file go.mod 
-          awk '1; END { print "replace github.com/sagernet/sing => ../../../../sing" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod 
-          awk '1; END { print "replace github.com/sagernet/sing-quic => ../../../../sing-quic" }' go.mod > go.mod.tmp && mv -f go.mod.tmp go.mod
-          cd ../../../libs
-          sed -i 's/with_wireguard/with_wireguard,with_shadowsocksr/g' build_go.sh
-          cd ../3rdparty
-          rm -rf QHotkey
-          curl -L -o QHotkey-52e25acf221e5ac86ce648f6922620fb2d6a7121.zip https://github.com/Skycoder42/QHotkey/archive/52e25acf221e5ac86ce648f6922620fb2d6a7121.zip
-          unzip QHotkey-52e25acf221e5ac86ce648f6922620fb2d6a7121.zip
-          rm -f QHotkey-52e25acf221e5ac86ce648f6922620fb2d6a7121.zip
-          mv QHotkey-52e25acf221e5ac86ce648f6922620fb2d6a7121 QHotkey
-          rm -rf qjs
-          curl -L -o qjs-3fb0770c9ee5ab031a56072520641d4577b694e3.zip https://github.com/MatsuriDayo/qjs/archive/3fb0770c9ee5ab031a56072520641d4577b694e3.zip
-          unzip qjs-3fb0770c9ee5ab031a56072520641d4577b694e3.zip
-          rm -f 3fb0770c9ee5ab031a56072520641d4577b694e3.zip
-          mv qjs-3fb0770c9ee5ab031a56072520641d4577b694e3 qjs
-          cd ../..
-          chmod -x .github/edit.sh
-          bash .github/edit.sh
-          
-      - name: Commit and Push Changes
+          [ ${{ matrix.cross_os }} == public_res ] || cd .. && rm -rf sing-box && git clone -b sing-box-b-t-rmz https://github.com/White12352/sing-box.git sing-box && rm -rf sing && git clone -b dev-tl-rmz https://github.com/White12352/sing.git sing && rm -rf sing-quic && git clone -b dev https://github.com/Mahdi-zarei/sing-quic sing-quic && git config --global user.email "you@example.com" && git config --global user.name "Your Name" && cd sjzm/go/cmd/nekobox_core && go mod tidy && cd ../../..
+          [ ${{ matrix.cross_os }} == public_res ] || GOOS=${{ matrix.cross_os }} GOARCH=${{ matrix.cross_arch }} ./libs/build_go.sh
+          [ ${{ matrix.cross_os }} == public_res ] || exit 0
+          ./libs/build_public_res.sh
+      - name: Tar files
+        if: steps.cache-common.outputs.cache-hit != 'true'
+        run: tar czvf artifacts.tgz ./deployment
+      - name: Uploading Artifact
+        uses: actions/upload-artifact@v4.4.0
+        with:
+          name: NekoRay-${{ github.sha }}-Common-${{ matrix.cross_os }}-${{ matrix.cross_arch }}
+          path: artifacts.tgz
+  build-cpp:
+    needs:
+      - build-go
+    strategy:
+      matrix:
+        include:
+          - platform: windows-2022
+            arch: x64
+            qt_version: "6.8.0"
+          - platform: ubuntu-22.04
+            arch: x64
+            qt_version: "6.8.0"
+          - platform: macos-13
+            arch: amd64
+            qt_version: "6.8.0"
+          - platform: macos-14
+            arch: arm64
+            qt_version: "6.8.0"
+      fail-fast: false
+    runs-on: ${{ matrix.platform }}
+    env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+    steps:
+      - name: Checking out sources
+        uses: actions/checkout@v4.2.0
+        with:
+          submodules: "recursive"
+      - name: Install MSVC compiler
+        if: matrix.platform == 'windows-2022'
+        uses: ilammy/msvc-dev-cmd@v1.13.0
+        with:
+          arch: ${{ matrix.arch }}
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4.1.8
+        with:
+          path: download-artifact
+      # ========================================================================================================= Qt Install
+      - name: Install Qt
+        if: matrix.platform != 'windows-2022'
+        uses: jurplel/install-qt-action@v4.0.0
+        with:
+          version: ${{ matrix.qt_version }}
+          setup-python: true
+          cache: true
+          cache-key-prefix: QtCache-${{ matrix.platform }}-${{ matrix.arch }}
+      - name: Install Qt Windows
+        if: matrix.platform == 'windows-2022'
+        uses: jurplel/install-qt-action@v4.0.0
+        with:
+          arch: win64_msvc2022_64
+          version: ${{ matrix.qt_version }}
+          cache: true
+          cache-key-prefix: QtCache-${{ matrix.platform }}-${{ matrix.arch }}
+      # ========================================================================================================= 编译与 Qt 无关的依赖
+      - name: Install ninja-build tool
+        uses: seanmiddleditch/gha-setup-ninja@v5
+      - name: Cache Download
+        id: cache-deps
+        uses: actions/cache@v4.0.2
+        with:
+          path: libs/deps
+          key: DepsCache-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('libs/build_deps_*.sh') }}-Qt${{ matrix.qt_version }}
+      - name: Build Dependencies
+        shell: bash
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: ./libs/build_deps_all.sh
+      # ========================================================================================================= Generate MakeFile and Build
+      - name: Windows - Generate MakeFile and Build
+        shell: bash
+        if: matrix.platform == 'windows-2022'
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CC: cl.exe
+          CXX: cl.exe
         run: |
-          git config user.email "github-actions@github.com"
-          git config user.name "GitHub Actions"
-          git checkout -b dev2.2
-          rm -rf .github
-          rm -f README.md
-          cp -r nekoray/* .
-          cp -r nekoray/.github .
+          mkdir build
+          cd build
+          cmake -GNinja -DQT_VERSION_MAJOR=6 -DCMAKE_BUILD_TYPE=Release ..
+          ninja -j2
+          cd ..
+          ./libs/deploy_windows64.sh
+      - name: Linux - Generate MakeFile and Build
+        shell: bash
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt update && sudo apt upgrade -y
+          mkdir build 
+          pushd build 
+          cmake -GNinja -DQT_VERSION_MAJOR=6  -DCMAKE_BUILD_TYPE=Release .. 
+          ninja 
+          popd 
+          ./libs/deploy_linux64.sh
+      - name: macOS - Generate MakeFile and Build
+        shell: bash
+        if: matrix.platform == 'macos-13' || matrix.platform == 'macos-14'
+        run: |
+          mkdir build
+          cd build
+          cmake -GNinja -DQT_VERSION_MAJOR=6 -DCMAKE_BUILD_TYPE=Release -DNKR_PACKAGE_MACOS=1 ..
+          ninja
+          cd ..
+          ./libs/deploy_macos.sh
+      # ========================================================================================================= Deployments
+      - name: Tar files
+        shell: bash
+        run: tar czvf artifacts.tgz ./deployment
+      - name: Uploading Artifact
+        uses: actions/upload-artifact@v4.4.0
+        with:
+          name: NekoRay-${{ github.sha }}-${{ matrix.platform }}-${{ matrix.arch }}-Qt${{ matrix.qt_version }}
+          path: artifacts.tgz
+  publish:
+    name: Pack & Publish Release
+    if: github.event.inputs.artifact-pack != 'y'
+    runs-on: ubuntu-latest
+    needs:
+      - build-cpp
+    steps:
+      - name: Checking out sources
+        uses: actions/checkout@v4.2.0
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4.1.8
+        with:
+          path: download-artifact
+      - name: Pack
+        run: |
+          curl -Lo - https://github.com/tcnksm/ghr/releases/download/v0.16.2/ghr_v0.16.2_linux_amd64.tar.gz | tar xzv
+          mv ghr*linux_amd64/ghr .
+          source libs/env_deploy.sh
+          find . -name artifacts.tgz | xargs -n1 tar xvzf
+          cd deployment
+          rm -rf *.pdb
+          ####
+          bash ../libs/pack_debian.sh ${{ github.event.inputs.tag }}
+          mv nekoray.deb $version_standalone-debian-x64.deb
           rm -rf nekoray
-          git add .
-          git commit -m "commit"
-          git push --force origin dev2.2
+          ####
+          mv linux64 nekoray
+          zip -r $version_standalone-linux64.zip nekoray
+          rm -rf nekoray
+          ####
+          mv windows7 nekoray
+          zip -r $version_standalone-windows7.zip nekoray
+          rm -rf nekoray
+          ####
+          mv windows64 nekoray
+          zip -r $version_standalone-windows64.zip nekoray
+          rm -rf nekoray
+          ####
+          mv macos-arm64/nekoray.dmg $version_standalone-macos-arm64.dmg
+          rm -rf macos-arm64/nekoray.dmg
+          ####
+          mv macos-amd64/nekoray.dmg $version_standalone-macos-amd64.dmg
+          rm -rf macos-amd64/nekoray.dmg
+      - name: Clean Up
+        run: |
+          cd deployment
+          rm -rf windows-arm64
+          rm -rf linux-arm64
+          rm -rf linux64
+          rm -rf windows64
+          rm -rf macos-amd64
+          rm -rf macos-arm64
+          rm -rf public_res
+          rm -rf *.pdb
+      - name: Uploading Artifact
+        uses: actions/upload-artifact@v4.4.0
+        with:
+          name: Deployment-${{ github.sha }}
+          path: deployment
+      - name: PreRelease
+        if: github.event.inputs.publish == 'p'
+        run: |
+          ./ghr -prerelease -delete -t "${{ github.token }}" -n "${{ github.event.inputs.tag }}" "${{ github.event.inputs.tag }}" deployment
+      - name: Release
+        if: github.event.inputs.publish == ''
+        run: |
+          ./ghr -delete -t "${{ github.token }}" -n "${{ github.event.inputs.tag }}" "${{ github.event.inputs.tag }}" deployment
